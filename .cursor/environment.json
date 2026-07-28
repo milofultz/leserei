@@ -1,0 +1,14 @@
+{
+  "name": "leserei",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "install": "bun install",
+  "terminals": [
+    {
+      "name": "dev",
+      "command": "bun dev"
+    }
+  ]
+}
