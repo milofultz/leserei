@@ -155,3 +155,54 @@ test("markdown unescapes escaped asterisk ornaments in headings", () => {
 
   expect(serializeDoc(doc, "markdown")).toBe("* * *\n\n*");
 });
+
+test("markdown blank-lines after emphasis that ends with sentence punct", () => {
+  const text = (value: string) => ({ t: "text" as const, value });
+  const emph = (value: string) => ({
+    t: "emph" as const,
+    children: [text(value)],
+  });
+  const strong = (value: string) => ({
+    t: "strong" as const,
+    children: [text(value)],
+  });
+
+  const endingFmtDoc: Doc = {
+    title: "",
+    chapters: [
+      {
+        title: "",
+        blocks: [
+          { t: "para", inline: [emph("She whispered.")] },
+          { t: "para", inline: [text("he did not answer.")] },
+          { t: "para", inline: [text("End is "), emph("italic.")] },
+          { t: "para", inline: [text("continues lowercase.")] },
+          { t: "para", inline: [strong("Done.")] },
+          { t: "para", inline: [text("next starts lower.")] },
+          // still soft-wrap when no sentence punct
+          { t: "para", inline: [emph("Fully enclosed")] },
+          { t: "para", inline: [text("jumps soft.")] },
+        ],
+      },
+    ],
+  };
+
+  expect(serializeDoc(endingFmtDoc, "markdown")).toBe(
+    [
+      "*She whispered.*",
+      "",
+      "he did not answer.",
+      "",
+      "End is *italic.*",
+      "",
+      "continues lowercase.",
+      "",
+      "**Done.**",
+      "",
+      "next starts lower.",
+      "",
+      "*Fully enclosed*",
+      "jumps soft.",
+    ].join("\n"),
+  );
+});

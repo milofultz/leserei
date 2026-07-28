@@ -3,7 +3,7 @@ import { inlineText } from "../docTransforms";
 import { isAsteriskDividerLine, SCENE_BREAK } from "../markdown";
 import type { SerializeOptions } from "./types";
 
-const PARAGRAPH_END_RE = /[.!?:)\]"'»…\u2026\u201D\u2019]$/u;
+const PARAGRAPH_END_RE = /[.!?:)\]"'»…\u2026\u201D\u2019]\*?\*?$/u;
 
 function headingPrefix(level: number): string {
   return `${"#".repeat(Math.min(Math.max(level, 1), 6))} `;
