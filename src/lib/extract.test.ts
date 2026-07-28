@@ -197,6 +197,14 @@ test("markdown: soft-wrapped p tags omit blank gap", () => {
   ).toBe("The quick brown fox\njumps over the lazy dog.");
 });
 
+test("markdown: blank line after fully italic para ending with punct", () => {
+  expect(
+    render(
+      `<html><body><p><em>She whispered.</em></p><p>he did not answer.</p></body></html>`,
+    ),
+  ).toBe("*She whispered.*\n\nhe did not answer.");
+});
+
 test("processed preset unwraps soft-wrapped paragraphs", () => {
   expect(
     render(
