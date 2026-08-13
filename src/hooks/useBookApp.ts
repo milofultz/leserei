@@ -1,11 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
 
+import { getDisplaySpine, getDoc, getProcessedText } from "@/shared";
 import { loadEpub, type SpineItem } from "../lib/epub";
-import { extractDoc } from "../lib/extract";
-import { filterSpine } from "../lib/frontMatter";
-import { defaultOptions, runPipeline } from "../lib/pipeline";
+import { defaultOptions } from "../lib/pipeline";
 import { PRESETS } from "../lib/presets";
-import { serializeDoc } from "../lib/serialize";
 import type { Options, OutputFormat, StepId } from "../lib/types";
 
 export function useBookApp() {
@@ -23,19 +21,15 @@ export function useBookApp() {
   const [editedText, setEditedText] = useState<string | null>(null);
 
   const displaySpine = useMemo(() => {
-    if (!spine) return null;
-    return filterSpine(spine, opts.removeFrontMatter);
+    return getDisplaySpine(spine, opts.removeFrontMatter);
   }, [spine, opts.removeFrontMatter]);
 
   const doc = useMemo(() => {
-    if (!displaySpine) return null;
-    return extractDoc(displaySpine, filename);
+    return getDoc(displaySpine, filename);
   }, [displaySpine, filename]);
 
   const processedText = useMemo(() => {
-    if (!doc) return null;
-    const result = runPipeline(doc, opts);
-    return serializeDoc(result, outputFormat, opts);
+    return getProcessedText(doc, opts, outputFormat);
   }, [doc, opts, outputFormat]);
 
   const displayText = editedText ?? processedText ?? "";
