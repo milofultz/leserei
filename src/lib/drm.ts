@@ -1,3 +1,4 @@
+import { parseXmlDocument } from "./html";
 import type { ZipArchive } from "./zip";
 
 const FONT_OBFUSCATION_ALGORITHMS = new Set([
@@ -18,7 +19,7 @@ export class DrmProtectedError extends Error {
 }
 
 export function encryptionXmlIndicatesDrm(xml: string): boolean {
-  const doc = new DOMParser().parseFromString(xml, "application/xml");
+  const doc = parseXmlDocument(xml);
   for (const data of Array.from(doc.querySelectorAll("EncryptedData"))) {
     const algorithm =
       data.querySelector("EncryptionMethod")?.getAttribute("Algorithm") ?? "";

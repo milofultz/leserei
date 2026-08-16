@@ -1,5 +1,5 @@
 import { assertNotDrmProtected, assertSpineContentReadable } from "./drm";
-import { parseHtmlDocument } from "./html";
+import { parseHtmlDocument, parseXmlDocument } from "./html";
 import { ZipArchive } from "./zip";
 
 export interface SpineItem {
@@ -62,7 +62,7 @@ async function requireEntry(zip: ZipArchive, path: string): Promise<string> {
 }
 
 function parseOpfPath(containerXml: string): string {
-  const doc = new DOMParser().parseFromString(containerXml, "application/xml");
+  const doc = parseXmlDocument(containerXml);
   const rootfile = doc.querySelector("rootfile");
   const path = rootfile?.getAttribute("full-path");
   if (!path) throw new Error("container.xml: no rootfile full-path");
@@ -73,7 +73,7 @@ function parseSpineEntries(
   opfXml: string,
   opfDir: string,
 ): Array<{ href: string; linear: boolean; properties: string[] }> {
-  const doc = new DOMParser().parseFromString(opfXml, "application/xml");
+  const doc = parseXmlDocument(opfXml);
 
   const manifestMap = new Map<string, ManifestEntry>();
   doc.querySelectorAll("manifest item").forEach((item) => {

@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import jsdom from "jsdom";
 
 import { loadEpub, type SpineItem } from "./lib/epub";
 import { PRESET_OPTIONS, type PresetOption } from "./lib/presets";
@@ -21,13 +20,6 @@ export type CLIOptions = {
   maxBlankLines?: number;
 };
 
-type CLIPresetOverrides = Omit<
-  {
-    [Property in keyof Options]+?: Options[Property];
-  },
-  "removeFrontMatter"
->;
-
 const definedProps = (obj: Record<string, unknown>) =>
   Object.fromEntries(Object.entries(obj).filter(([_k, v]) => v !== undefined));
 
@@ -37,19 +29,18 @@ export const convertFileUsingCLI = async (
 ): Promise<string | undefined> => {
   const {
     outputFolder: providedOutputFolder,
-    preset = "reading",
+    preset = "full",
     outputFormat = "markdown",
-    removeFrontMatter = true,
   } = options;
 
-  // Convert to proper option type
-  const presetOverrides: CLIPresetOverrides = {
+  const presetOverrides: Partial<Options> = {
     normalize: options.normalize,
     italicCleanup: options.fixEmphasisSpacing,
     dehyphenate: options.fixHyphenation,
     unwrap: options.unwrap,
     stripInvisible: options.stripInvisible,
     standardizeSceneBreaks: options.standardizeSceneBreaks,
+    removeFrontMatter: options.removeFrontMatter,
     maxBlankLines: options.maxBlankLines,
   };
 
@@ -66,71 +57,52 @@ export const convertFileUsingCLI = async (
     return;
   }
 
-  // load file buffer
-  let data: Buffer;
+  let file: File;
   try {
-    data = fs.readFileSync(filename);
+    const data = await Bun.file(filename).arrayBuffer();
+    file = new File([data], filename);
   } catch (e) {
     console.error(`\nFile '${filename}' had an error on load.\n\n${e}\n`);
     return;
   }
 
-  // get blob
-  const blob = new Blob([data as BlobPart], {
-    type: "application/octet-stream",
-  });
-  if (!blob) {
-    console.error(
-      `\nBlob from '${filename}' had an error on load. The blob is logged below.\n\n${blob}\n`,
-    );
-    return;
-  }
-
-  // Convert to text and process contents
-  const file = new File([blob], filename, { type: "application/octet-stream" });
   let epub: SpineItem[];
   try {
-    // These are required to make the epub parser work
-    const dom = new jsdom.JSDOM();
-    global.DOMParser = dom.window.DOMParser;
-    global.Node = dom.window.Node;
-
     epub = await loadEpub(file);
   } catch (e) {
     console.error(`\nError when parsing '${filename}' as EPUB file.\n\n${e}\n`);
     return;
   }
 
-  const displaySpine = getDisplaySpine(epub, removeFrontMatter);
-  const doc = getDoc(displaySpine, filename);
-  const processorOptions: Options = Object.assign(
-    PRESET_OPTIONS[preset],
-    definedProps(presetOverrides),
+  const processorOptions: Options = {
+    ...PRESET_OPTIONS[preset],
+    ...definedProps(presetOverrides),
+  };
+  const displaySpine = getDisplaySpine(
+    epub,
+    processorOptions.removeFrontMatter,
   );
+  const doc = getDoc(displaySpine, filename);
   const processedText = getProcessedText(doc, processorOptions, outputFormat);
   if (!processedText) {
     console.error(`\nError while processing text in '${filename}'.\n`);
     return;
   }
 
-  // create text filename via extension replacement
   const outputFolder = providedOutputFolder || path.dirname(filename);
-  if (!fs.existsSync(outputFolder)) {
-    fs.mkdirSync(outputFolder);
-  }
+  fs.mkdirSync(outputFolder, { recursive: true });
   const filenameBase = path.basename(filename, path.extname(filename));
-  const textFilename = `${filenameBase}.txt`;
-  const textFilepath = path.join(outputFolder, textFilename);
+  const outputExt = outputFormat === "plain" ? ".txt" : ".md";
+  const outputFilename = `${filenameBase}${outputExt}`;
+  const outputFilepath = path.join(outputFolder, outputFilename);
 
-  // create text file from blob using filename
-  // note: will overwrite existing file
-  const writeStream = fs.createWriteStream(textFilepath);
-  writeStream.on("error", (err) => {
+  try {
+    await Bun.write(outputFilepath, processedText);
+  } catch (err) {
     console.error(
-      `\nAn error occurred when writing 'txt' file from '${filename}' to '${textFilepath}'.\n\n${err}\n`,
+      `\nAn error occurred when writing '${outputFilename}' from '${filename}' to '${outputFilepath}'.\n\n${err}\n`,
     );
-  });
-  writeStream.write(processedText);
-  writeStream.end();
+    return;
+  }
   return processedText;
 };

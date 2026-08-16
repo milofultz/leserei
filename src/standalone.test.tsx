@@ -9,6 +9,7 @@ import {
 } from "bun:test";
 import fs from "node:fs";
 
+import { PRESET_OPTIONS } from "./lib/presets";
 import { convertFileUsingCLI } from "./standalone";
 
 const TEMP_FOLDER = "__tmp";
@@ -71,24 +72,34 @@ describe("should exit early when", () => {
 });
 
 test("should convert valid EPUB file", async () => {
-  const spy = spyOn(fs, "createWriteStream");
   const validEpubFile = `${TEMP_FOLDER}/${TEST_EPUB_FILENAME}`;
   await convertFileUsingCLI(validEpubFile);
-  expect(spy.mock.calls[0]).toBeDefined();
-  expect(spy.mock.calls[0]![0]).toBe(
-    `${TEMP_FOLDER}/${TEST_EPUB_BASENAME}.txt`,
-  );
+  expect(fs.existsSync(`${TEMP_FOLDER}/${TEST_EPUB_BASENAME}.md`)).toBe(true);
+});
+
+test("does not mutate shared preset options", async () => {
+  const snapshot = { ...PRESET_OPTIONS.reading };
+  const validEpubFile = `${TEMP_FOLDER}/${TEST_EPUB_FILENAME}`;
+  await convertFileUsingCLI(validEpubFile, { normalize: false });
+  expect(PRESET_OPTIONS.reading).toEqual(snapshot);
+});
+
+test("default front matter matches full preset", async () => {
+  const validEpubFile = `${TEMP_FOLDER}/${TEST_EPUB_FILENAME}`;
+  const implicit = await convertFileUsingCLI(validEpubFile);
+  const explicit = await convertFileUsingCLI(validEpubFile, {
+    removeFrontMatter: true,
+  });
+  expect(implicit).toEqual(explicit);
 });
 
 describe("should use option when provided", () => {
   test("output folder", async () => {
-    const outputFolder = `${TEMP_FOLDER}/wahoo`;
-    const spy = spyOn(fs, "createWriteStream");
+    const outputFolder = `${TEMP_FOLDER}/nested/wahoo`;
     const validEpubFile = `${TEMP_FOLDER}/${TEST_EPUB_FILENAME}`;
     await convertFileUsingCLI(validEpubFile, { outputFolder });
-    expect(spy.mock.calls[0]).toBeDefined();
-    expect(spy.mock.calls[0]![0]).toBe(
-      `${outputFolder}/${TEST_EPUB_BASENAME}.txt`,
+    expect(fs.existsSync(`${outputFolder}/${TEST_EPUB_BASENAME}.md`)).toBe(
+      true,
     );
   });
 
@@ -113,9 +124,13 @@ describe("should use option when provided", () => {
     expect(plain).toBeDefined();
     expect(markdown).not.toEqual(plain);
     // Test EPUB has headers, easiest difference to test
-    const markdownHeadingRe = /^# [A-Za-z]/;
+    const markdownHeadingRe = /^# [A-Za-z]/m;
     expect(markdown).toMatch(markdownHeadingRe);
     expect(plain).not.toMatch(markdownHeadingRe);
+    expect(fs.existsSync(`${TEMP_FOLDER}/${TEST_EPUB_BASENAME}.md`)).toBe(true);
+    expect(fs.existsSync(`${TEMP_FOLDER}/${TEST_EPUB_BASENAME}.txt`)).toBe(
+      true,
+    );
   });
 
   describe("formatting options", () => {
@@ -134,14 +149,14 @@ describe("should use option when provided", () => {
     Object.entries(optionsToTest).forEach(([key, value]) => {
       test(`option '${key}'`, async () => {
         const [off, on] = value;
-        const optionOn = await convertFileUsingCLI(validEpubFile, {
+        const optionOff = await convertFileUsingCLI(validEpubFile, {
           [key]: off,
         });
-        expect(optionOn).toBeDefined();
-        const optionOff = await convertFileUsingCLI(validEpubFile, {
+        expect(optionOff).toBeDefined();
+        const optionOn = await convertFileUsingCLI(validEpubFile, {
           [key]: on,
         });
-        expect(optionOff).toBeDefined();
+        expect(optionOn).toBeDefined();
         expect(optionOn).not.toEqual(optionOff);
       });
     });
