@@ -133,6 +133,20 @@ describe("should use option when provided", () => {
     );
   });
 
+  test("output extension", async () => {
+    const validEpubFile = `${TEMP_FOLDER}/${TEST_EPUB_FILENAME}`;
+    await convertFileUsingCLI(validEpubFile, {
+      outputFormat: "markdown",
+      outputExtension: "txt",
+    });
+    expect(fs.existsSync(`${TEMP_FOLDER}/${TEST_EPUB_BASENAME}.txt`)).toBe(
+      true,
+    );
+    expect(fs.existsSync(`${TEMP_FOLDER}/${TEST_EPUB_BASENAME}.md`)).toBe(
+      false,
+    );
+  });
+
   describe("formatting options", () => {
     const validEpubFile = `${TEMP_FOLDER}/${TEST_EPUB_FILENAME}`;
     const optionsToTest = {

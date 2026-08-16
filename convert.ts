@@ -77,6 +77,12 @@ program
       .choices(["plain", "markdown"])
       .default("markdown"),
   )
+  .addOption(
+    new Option(
+      "-x, --output-extension <ext>",
+      "output file extension, regardless of format (default: md for markdown, txt for plain)",
+    ).choices(["md", "txt"]),
+  )
   .argument("<files...>", "files to convert");
 
 program.parse(process.argv);

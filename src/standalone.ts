@@ -10,6 +10,7 @@ export type CLIOptions = {
   outputFolder?: string;
   preset?: PresetOption;
   outputFormat?: OutputFormat;
+  outputExtension?: "md" | "txt";
   normalize?: boolean;
   fixEmphasisSpacing?: boolean;
   fixHyphenation?: boolean;
@@ -31,6 +32,7 @@ export const convertFileUsingCLI = async (
     outputFolder: providedOutputFolder,
     preset = "full",
     outputFormat = "markdown",
+    outputExtension,
   } = options;
 
   const presetOverrides: Partial<Options> = {
@@ -92,8 +94,8 @@ export const convertFileUsingCLI = async (
   const outputFolder = providedOutputFolder || path.dirname(filename);
   fs.mkdirSync(outputFolder, { recursive: true });
   const filenameBase = path.basename(filename, path.extname(filename));
-  const outputExt = outputFormat === "plain" ? ".txt" : ".md";
-  const outputFilename = `${filenameBase}${outputExt}`;
+  const ext = outputExtension ?? (outputFormat === "plain" ? "txt" : "md");
+  const outputFilename = `${filenameBase}.${ext}`;
   const outputFilepath = path.join(outputFolder, outputFilename);
 
   try {
