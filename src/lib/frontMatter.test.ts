@@ -41,6 +41,18 @@ test("isFrontMatterItem: cover href", () => {
   expect(isFrontMatterItem(item("cover.xhtml", "<p>Cover</p>"))).toBe(true);
 });
 
+test("isFrontMatterItem: Calibre title and about pages", () => {
+  expect(isFrontMatterItem(item("OEBPS/title.xhtml", "<p>A Novel</p>"))).toBe(
+    true,
+  );
+  expect(
+    isFrontMatterItem(item("OEBPS/about-the-book.xhtml", "<p>About</p>")),
+  ).toBe(true);
+  expect(isFrontMatterItem(item("OEBPS/author.xhtml", "<p>Bio</p>"))).toBe(
+    true,
+  );
+});
+
 test("isFrontMatterItem: nav-only document", () => {
   expect(
     isFrontMatterItem(

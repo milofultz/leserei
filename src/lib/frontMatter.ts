@@ -2,7 +2,7 @@ import type { SpineItem } from "./epub";
 import { documentBody, parseHtmlDocument } from "./html";
 
 const FRONT_MATTER_HREF =
-  /(?:^|\/)(nav|toc|cover|title-?page|titlepage|copyright|dedication|halftitle|half-?title|contents?|colophon|imprint|acknowledgments?|epigraph|praises?|alsoby|also-by|about-?the-?author|frontmatter|front-?matter|fm\d|prelim)(?:[._-]|\.|$)/i;
+  /(?:^|\/)(nav|toc|cover|title-?page|titlepage|title|copyright|dedication|halftitle|half-?title|contents?|colophon|imprint|acknowledgments?|epigraph|praises?|alsoby|also-by|about-the-\w+|about-?the-?author|author|frontmatter|front-?matter|fm\d|prelim)(?:[._-]|\.|$)/i;
 
 const SKIP_PROPERTIES = new Set(["nav", "cover-image", "cover"]);
 
